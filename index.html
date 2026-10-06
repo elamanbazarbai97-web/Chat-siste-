@@ -1,126 +1,595 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Мой Чат</title>
+
+<title></title>
 
 <style>
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
   font-family: Arial, sans-serif;
-  background: #eef2f7;
+  background: #f3f3f3;
+  color: #222;
+  padding-bottom: 70px;
 }
 
-.chat {
-  max-width: 600px;
-  height: 100vh;
-  margin: auto;
+/* ВЕРХНЯЯ ПАНЕЛЬ */
+.header {
+  height: 65px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  position: relative;
+}
+
+.menu {
+  font-size: 27px;
+  cursor: pointer;
+}
+
+/* ПРОФИЛЬ ПО ЦЕНТРУ */
+.profile-top {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 46px;
+  height: 46px;
+
+  border-radius: 50%;
+  background: #ddd;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 25px;
+  cursor: pointer;
+}
+
+/* ТРИ СЕРЫЕ ТОЧКИ */
+.more {
+  font-size: 27px;
+  color: #777;
+  cursor: pointer;
+}
+
+/* ПОИСК */
+.search {
+  padding: 12px;
+}
+
+.search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: white;
+  border-radius: 25px;
+  padding: 13px 18px;
+  font-size: 16px;
+}
+
+/* КОНТАКТЫ */
+.contacts {
+  padding: 5px 12px;
+}
+
+.contact {
   background: white;
   display: flex;
-  flex-direction: column;
-}
-
-.header {
-  background: #2196f3;
-  color: white;
-  padding: 18px;
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-}
-
-.messages {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-}
-
-.message {
-  background: #e3f2fd;
+  align-items: center;
   padding: 12px;
-  border-radius: 15px;
-  margin-bottom: 10px;
-  max-width: 80%;
+  margin-bottom: 8px;
+  border-radius: 12px;
 }
 
-.input-area {
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #ddd;
+
   display: flex;
-  padding: 10px;
-  border-top: 1px solid #ddd;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 25px;
+  margin-right: 12px;
 }
 
-input {
-  flex: 1;
-  padding: 14px;
-  border: 1px solid #ccc;
-  border-radius: 25px;
-  font-size: 16px;
+.name {
+  font-size: 17px;
+  font-weight: bold;
 }
 
-button {
+/* СТРАНИЦЫ */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+/* ЗАГОЛОВКИ РАЗДЕЛОВ НЕ ПОКАЗЫВАЕМ */
+.page-title {
+  display: none;
+}
+
+/* ПРОФИЛЬ */
+.profile-page {
+  text-align: center;
+  padding: 25px 15px;
+}
+
+.profile-photo {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #ddd;
+  margin: 10px auto 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 55px;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.edit-profile-btn {
+  width: 100%;
   border: none;
-  background: #2196f3;
-  color: white;
-  padding: 14px 20px;
-  border-radius: 25px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* РЕДАКТИРОВАНИЕ */
+.edit-box {
+  background: white;
+  margin: 15px;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.edit-photo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #ddd;
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 45px;
+}
+
+.edit-box input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
   font-size: 16px;
+  margin-bottom: 15px;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #1877f2;
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* СТАТУС / ФОТО / ИГРА */
+.status-box,
+.photo-box,
+.game-box {
+  margin: 15px;
+  padding: 35px 20px;
+  background: white;
+  border-radius: 15px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* НИЖНЯЯ ПАНЕЛЬ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+
+  width: 100%;
+  height: 70px;
+
+  background: white;
+  border-top: 1px solid #ddd;
+
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+
+  z-index: 100;
+}
+
+/* ТОЛЬКО ИКОНКИ */
+.nav-btn {
+  width: 20%;
+  height: 100%;
+
+  border: none;
+  background: none;
+
+  color: #555;
+
+  font-size: 27px;
+
+  cursor: pointer;
+}
+
+.nav-btn.active {
+  color: #1877f2;
+}
+
+.nav-icon {
+  font-size: 27px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="chat">
+<!-- ВЕРХ -->
+<header class="header">
 
-  <div class="header">
-    💬 Мой Чат
+  <div class="menu">☰</div>
+
+  <div
+    class="profile-top"
+    onclick="openProfile()"
+  >
+    👤
   </div>
 
-  <div class="messages" id="messages">
-    <div class="message">
-      👋 Добро пожаловать в чат!
-    </div>
-  </div>
+  <div class="more">⋮</div>
 
-  <div class="input-area">
+</header>
+
+
+<!-- ЧАТ -->
+<section id="chat" class="page active">
+
+  <div class="search">
     <input
-      id="messageInput"
       type="text"
-      placeholder="Напишите сообщение..."
+      placeholder="Поиск контакта..."
+      onkeyup="searchContacts()"
     >
-    <button onclick="sendMessage()">Отправить</button>
   </div>
 
-</div>
+  <div class="contacts" id="contacts">
+
+    <div class="contact">
+      <div class="avatar">👤</div>
+      <div class="name">АТАМ</div>
+    </div>
+
+    <div class="contact">
+      <div class="avatar">👤</div>
+      <div class="name">АТАМ</div>
+    </div>
+
+    <div class="contact">
+      <div class="avatar">👤</div>
+      <div class="name">ЭМЕЛИ</div>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- КОНТАКТЫ -->
+<section id="contactsPage" class="page">
+
+  <div class="contacts">
+
+    <div class="contact">
+      <div class="avatar">👤</div>
+      <div class="name">АТАМ</div>
+    </div>
+
+    <div class="contact">
+      <div class="avatar">👤</div>
+      <div class="name">АТАМ</div>
+    </div>
+
+    <div class="contact">
+      <div class="avatar">👤</div>
+      <div class="name">ЭМЕЛИ</div>
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- СТАТУС -->
+<section id="status" class="page">
+
+  <div class="status-box">
+    ➕
+    <br><br>
+    Добавить статус
+  </div>
+
+</section>
+
+
+<!-- ФОТО -->
+<section id="photos" class="page">
+
+  <div class="photo-box">
+    🖼️
+    <br><br>
+    Фотоальбом
+  </div>
+
+</section>
+
+
+<!-- ИГРА -->
+<section id="game" class="page">
+
+  <div class="game-box">
+    🎮
+    <br><br>
+    Онлайн игры
+  </div>
+
+</section>
+
+
+<!-- ПРОФИЛЬ -->
+<section id="profile" class="page">
+
+  <div class="profile-page">
+
+    <div class="profile-photo" id="profilePhoto">
+      👤
+    </div>
+
+    <div
+      class="profile-name"
+      id="profileName"
+    >
+      Мой профиль
+    </div>
+
+    <button
+      class="edit-profile-btn"
+      onclick="openEditProfile()"
+    >
+      ✏️ Редактировать профиль
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- РЕДАКТИРОВАНИЕ -->
+<section id="editProfile" class="page">
+
+  <div class="edit-box">
+
+    <div class="edit-photo">
+      👤
+    </div>
+
+    <input
+      type="text"
+      id="nameInput"
+      placeholder="Введите имя"
+    >
+
+    <input
+      type="file"
+      accept="image/*"
+      id="photoInput"
+    >
+
+    <button
+      class="save-btn"
+      onclick="saveProfile()"
+    >
+      Сохранить
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- НИЖНЕЕ МЕНЮ -->
+<nav class="bottom-nav">
+
+  <button
+    class="nav-btn active"
+    onclick="showPage('chat', this)"
+  >
+    <span class="nav-icon">💬</span>
+  </button>
+
+
+  <button
+    class="nav-btn"
+    onclick="showPage('contactsPage', this)"
+  >
+    <span class="nav-icon">👥</span>
+  </button>
+
+
+  <button
+    class="nav-btn"
+    onclick="showPage('status', this)"
+  >
+    <span class="nav-icon">➕</span>
+  </button>
+
+
+  <button
+    class="nav-btn"
+    onclick="showPage('photos', this)"
+  >
+    <span class="nav-icon">🖼️</span>
+  </button>
+
+
+  <button
+    class="nav-btn"
+    onclick="showPage('game', this)"
+  >
+    <span class="nav-icon">🎮</span>
+  </button>
+
+</nav>
+
 
 <script>
-function sendMessage() {
-  const input = document.getElementById("messageInput");
-  const messages = document.getElementById("messages");
 
-  if (input.value.trim() === "") return;
+/* ПЕРЕКЛЮЧЕНИЕ */
 
-  const message = document.createElement("div");
-  message.className = "message";
-  message.textContent = input.value;
+function showPage(pageId, button) {
 
-  messages.appendChild(message);
+  document
+    .querySelectorAll(".page")
+    .forEach(function(page) {
+      page.classList.remove("active");
+    });
 
-  input.value = "";
-  messages.scrollTop = messages.scrollHeight;
+  document
+    .getElementById(pageId)
+    .classList.add("active");
+
+  document
+    .querySelectorAll(".nav-btn")
+    .forEach(function(btn) {
+      btn.classList.remove("active");
+    });
+
+  if (button) {
+    button.classList.add("active");
+  }
 }
 
-document.getElementById("messageInput").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    sendMessage();
+
+/* ПРОФИЛЬ */
+
+function openProfile() {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(function(page) {
+      page.classList.remove("active");
+    });
+
+  document
+    .getElementById("profile")
+    .classList.add("active");
+}
+
+
+/* РЕДАКТИРОВАНИЕ */
+
+function openEditProfile() {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(function(page) {
+      page.classList.remove("active");
+    });
+
+  document
+    .getElementById("editProfile")
+    .classList.add("active");
+}
+
+
+/* СОХРАНЕНИЕ ПРОФИЛЯ */
+
+function saveProfile() {
+
+  let name =
+    document
+      .getElementById("nameInput")
+      .value;
+
+  if (name.trim() !== "") {
+
+    document
+      .getElementById("profileName")
+      .textContent = name;
+
   }
-});
+
+  openProfile();
+}
+
+
+/* ПОИСК */
+
+function searchContacts() {
+
+  let input =
+    document.querySelector(".search input");
+
+  let text =
+    input.value.toLowerCase();
+
+  document
+    .querySelectorAll("#contacts .contact")
+    .forEach(function(contact) {
+
+      let name =
+        contact
+          .querySelector(".name")
+          .textContent
+          .toLowerCase();
+
+      if (name.includes(text)) {
+        contact.style.display = "flex";
+      } else {
+        contact.style.display = "none";
+      }
+
+    });
+}
+
 </script>
 
 </body>
