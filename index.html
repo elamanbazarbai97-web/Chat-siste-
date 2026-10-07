@@ -91,6 +91,38 @@
 <title></title>
 
 <style>
+ /* ПРОФИЛЬ СВЕРХУ */
+.profile-header {
+  height: 90px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.profile-menu {
+  position: absolute;
+  right: 20px;
+  top: 25px;
+  border: none;
+  background: none;
+  font-size: 32px;
+  color: #777;
+  cursor: pointer;
+} 
 * {
   box-sizing: border-box;
   margin: 0;
@@ -345,7 +377,6 @@ body {
 </head>
 
 <body>
-
 <!-- ВЕРХ -->
 <header class="header">
 
