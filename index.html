@@ -2,6 +2,89 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <style>
+#chatWindow {
+  position: fixed;
+  inset: 0;
+  background: #f2f2f2;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  height: 70px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.chat-header button {
+  border: 0;
+  background: none;
+  font-size: 38px;
+}
+
+.chat-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.empty-chat {
+  text-align: center;
+  color: #777;
+  margin-top: 30px;
+}
+
+.my-message {
+  background: #d9fdd3;
+  padding: 10px 14px;
+  border-radius: 15px;
+  margin: 8px 0;
+  margin-left: auto;
+  max-width: 75%;
+  width: fit-content;
+}
+
+.chat-input {
+  background: white;
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.chat-input button {
+  width: 50px;
+  border: 0;
+  border-radius: 50%;
+  background: #555;
+  color: white;
+  font-size: 20px;
+}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -591,6 +674,57 @@ function searchContacts() {
 }
 
 </script>
+// Открытие переписки с контактом
+document.querySelectorAll("#contacts .contact").forEach(function(contact) {
 
+  contact.addEventListener("click", function() {
+
+    let name = contact.querySelector(".name").textContent;
+
+    let chat = document.createElement("div");
+
+    chat.id = "chatWindow";
+
+    chat.innerHTML = `
+      <div class="chat-header">
+        <button onclick="document.getElementById('chatWindow').remove()">‹</button>
+        <div class="chat-avatar">👤</div>
+        <strong>${name}</strong>
+      </div>
+
+      <div class="chat-messages">
+        <div class="empty-chat">
+          Начните общение с ${name}
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <input id="messageInput" placeholder="Напишите сообщение...">
+        <button onclick="sendMessage()">➤</button>
+      </div>
+    `;
+
+    document.body.appendChild(chat);
+  });
+
+});
+
+function sendMessage() {
+
+  let input = document.getElementById("messageInput");
+
+  if (!input || input.value.trim() === "") return;
+
+  let messages = document.querySelector(".chat-messages");
+
+  let message = document.createElement("div");
+
+  message.className = "my-message";
+  message.textContent = input.value;
+
+  messages.appendChild(message);
+
+  input.value = "";
+}
 </body>
 </html>
