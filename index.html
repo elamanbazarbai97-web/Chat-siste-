@@ -2,760 +2,482 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <style>
-#chatWindow {
-  position: fixed;
-  inset: 0;
-  background: #f2f2f2;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-header {
-  height: 70px;
-  background: white;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 15px;
-  border-bottom: 1px solid #ddd;
-}
-
-.chat-header button {
-  border: 0;
-  background: none;
-  font-size: 38px;
-}
-
-.chat-avatar {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 25px;
-}
-
-.chat-messages {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.empty-chat {
-  text-align: center;
-  color: #777;
-  margin-top: 30px;
-}
-
-.my-message {
-  background: #d9fdd3;
-  padding: 10px 14px;
-  border-radius: 15px;
-  margin: 8px 0;
-  margin-left: auto;
-  max-width: 75%;
-  width: fit-content;
-}
-
-.chat-input {
-  background: white;
-  padding: 10px;
-  display: flex;
-  gap: 8px;
-}
-
-.chat-input input {
-  flex: 1;
-  border: 1px solid #ddd;
-  border-radius: 25px;
-  padding: 12px;
-  font-size: 16px;
-}
-
-.chat-input button {
-  width: 50px;
-  border: 0;
-  border-radius: 50%;
-  background: #555;
-  color: white;
-  font-size: 20px;
-}
-</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title></title>
+<title>Мой Чат</title>
 
 <style>
- /* ПРОФИЛЬ СВЕРХУ */
-.profile-header {
-  height: 90px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  border-bottom: 1px solid #eee;
-}
-
-.profile-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-}
-
-.profile-menu {
-  position: absolute;
-  right: 20px;
-  top: 25px;
-  border: none;
-  background: none;
-  font-size: 32px;
-  color: #777;
-  cursor: pointer;
-} 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  background: #f3f3f3;
+  background: #eef1f5;
   color: #222;
-  padding-bottom: 70px;
 }
 
-/* ВЕРХНЯЯ ПАНЕЛЬ */
-.header {
-  height: 65px;
+button, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+}
+
+.app {
+  max-width: 650px;
+  height: 100dvh;
+  min-height: 450px;
+  margin: auto;
   background: white;
-  border-bottom: 1px solid #ddd;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 15px;
+  flex-direction: column;
+  overflow: hidden;
   position: relative;
 }
 
-.menu {
-  font-size: 27px;
-  cursor: pointer;
-}
-
-/* ПРОФИЛЬ ПО ЦЕНТРУ */
-.profile-top {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-
-  width: 46px;
-  height: 46px;
-
-  border-radius: 50%;
-  background: #ddd;
-
+.header {
+  padding: 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  font-size: 25px;
-  cursor: pointer;
-}
-
-/* ТРИ СЕРЫЕ ТОЧКИ */
-.more {
-  font-size: 27px;
-  color: #777;
-  cursor: pointer;
-}
-
-/* ПОИСК */
-.search {
-  padding: 12px;
-}
-
-.search input {
-  width: 100%;
-  border: none;
-  outline: none;
+  gap: 12px;
   background: white;
-  border-radius: 25px;
-  padding: 13px 18px;
-  font-size: 16px;
-}
-
-/* КОНТАКТЫ */
-.contacts {
-  padding: 5px 12px;
-}
-
-.contact {
-  background: white;
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-radius: 12px;
+  border-bottom: 1px solid #ddd;
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  background: #ddd;
+  background: #e1e1e1;
+  object-fit: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
 
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-info strong {
+  font-size: 21px;
+  overflow-wrap: anywhere;
+}
+
+.header-info small {
+  display: block;
+  color: #777;
+  margin-top: 5px;
+}
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  font-size: 25px;
+  border-radius: 50%;
+}
+
+.icon-button:active {
+  background: #eee;
+}
+
+.view {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.view.active {
+  display: flex;
+}
+
+.section-title {
+  padding: 18px;
+  font-size: 23px;
+  font-weight: bold;
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+.contact-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.contact {
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  font-size: 25px;
-  margin-right: 12px;
+  gap: 12px;
+  padding: 13px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  text-align: left;
 }
 
-.name {
-  font-size: 17px;
-  font-weight: bold;
+.contact:hover {
+  background: #f6f7f8;
 }
 
-/* СТРАНИЦЫ */
-.page {
-  display: none;
+.contact-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.page.active {
+.contact-info strong {
   display: block;
+  font-size: 17px;
 }
 
-/* ЗАГОЛОВКИ РАЗДЕЛОВ НЕ ПОКАЗЫВАЕМ */
-.page-title {
-  display: none;
+.contact-info small {
+  display: block;
+  margin-top: 5px;
+  color: #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ПРОФИЛЬ */
-.profile-page {
+.empty {
+  padding: 30px 20px;
   text-align: center;
-  padding: 25px 15px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  background: #f2f3f5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  max-width: 82%;
+  padding: 11px 14px;
+  border-radius: 17px;
+  background: white;
+  overflow-wrap: anywhere;
+  align-self: flex-start;
+  box-shadow: 0 1px 2px #0000000a;
+}
+
+.message.mine {
+  background: #d9fdd3;
+  align-self: flex-end;
+}
+
+.message-time {
+  display: block;
+  text-align: right;
+  font-size: 10px;
+  color: #777;
+  margin-top: 5px;
+}
+
+.composer {
+  padding: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: white;
+  border-top: 1px solid #eee;
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 28px;
+  outline: none;
+}
+
+.composer input:focus {
+  border-color: #777;
+}
+
+.send-button {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  background: #505050;
+  color: white;
+  border-radius: 50%;
+  font-size: 23px;
+}
+
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  background: white;
+  border-top: 1px solid #ddd;
+  padding: 6px 0;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+}
+
+.nav-button {
+  flex: 1;
+  height: 55px;
+  background: white;
+  font-size: 28px;
+  color: #444;
+}
+
+.nav-button.active {
+  background: #ededed;
+  border-radius: 12px;
+}
+
+.profile-content {
+  padding: 24px 18px;
+  overflow-y: auto;
 }
 
 .profile-photo {
   width: 110px;
   height: 110px;
-  border-radius: 50%;
-  background: #ddd;
-  margin: 10px auto 15px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
+  margin: 0 auto 18px;
   font-size: 55px;
 }
 
-.profile-name {
-  font-size: 22px;
-  font-weight: bold;
-  margin-bottom: 30px;
+.field {
+  margin: 18px 0;
 }
 
-.edit-profile-btn {
+.field label {
+  display: block;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.field input {
   width: 100%;
-  border: none;
-  background: white;
-  padding: 16px;
-  border-radius: 12px;
-  font-size: 17px;
-  cursor: pointer;
-}
-
-/* РЕДАКТИРОВАНИЕ */
-.edit-box {
-  background: white;
-  margin: 15px;
-  padding: 20px;
-  border-radius: 15px;
-}
-
-.edit-photo {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: #ddd;
-  margin: 0 auto 20px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 45px;
-}
-
-.edit-box input {
-  width: 100%;
-  padding: 14px;
+  padding: 13px;
   border: 1px solid #ddd;
   border-radius: 10px;
-  font-size: 16px;
-  margin-bottom: 15px;
 }
 
-.save-btn {
+.primary-button {
   width: 100%;
   padding: 14px;
-  border: none;
   border-radius: 10px;
-  background: #1877f2;
+  background: #444;
   color: white;
-  font-size: 17px;
-  cursor: pointer;
+  margin-top: 10px;
 }
 
-/* СТАТУС / ФОТО / ИГРА */
-.status-box,
-.photo-box,
-.game-box {
-  margin: 15px;
-  padding: 35px 20px;
-  background: white;
-  border-radius: 15px;
-  text-align: center;
-  font-size: 18px;
+.secondary-button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eee;
+  color: #222;
 }
 
-/* НИЖНЯЯ ПАНЕЛЬ */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+#photoInput {
+  display: none;
+}
 
-  width: 100%;
-  height: 70px;
-
-  background: white;
-  border-top: 1px solid #ddd;
-
-  display: flex;
-  justify-content: space-around;
+.modal {
+  position: absolute;
+  inset: 0;
+  background: #0007;
+  display: none;
   align-items: center;
-
-  z-index: 100;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
 }
 
-/* ТОЛЬКО ИКОНКИ */
-.nav-btn {
-  width: 20%;
-  height: 100%;
-
-  border: none;
-  background: none;
-
-  color: #555;
-
-  font-size: 27px;
-
-  cursor: pointer;
+.modal.show {
+  display: flex;
 }
 
-.nav-btn.active {
-  color: #1877f2;
+.modal-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 22px;
+  background: white;
+  border-radius: 18px;
 }
 
-.nav-icon {
-  font-size: 27px;
+.modal-card h3 {
+  margin-top: 0;
+}
+
+.modal-card input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.modal-actions button {
+  flex: 1;
+}
+
+@media (min-width: 700px) {
+  body {
+    padding: 15px;
+  }
+
+  .app {
+    height: calc(100dvh - 30px);
+    border-radius: 15px;
+    box-shadow: 0 3px 20px #00000010;
+  }
 }
 </style>
 </head>
 
 <body>
-<!-- ВЕРХ -->
-<header class="header">
 
-  <div class="menu">☰</div>
+<div class="app">
 
-  <div
-    class="profile-top"
-    onclick="openProfile()"
-  >
-    👤
-  </div>
+  <div class="header">
+    <div class="avatar" id="headerAvatar">👤</div>
 
-  <div class="more">⋮</div>
-
-</header>
-
-
-<!-- ЧАТ -->
-<section id="chat" class="page active">
-
-  <div class="search">
-    <input
-      type="text"
-      placeholder="Поиск контакта..."
-      onkeyup="searchContacts()"
-    >
-  </div>
-
-  <div class="contacts" id="contacts">
-
-    <div class="contact">
-      <div class="avatar">👤</div>
-      <div class="name">АТАМ</div>
+    <div class="header-info">
+      <strong id="headerName">Мой Чат</strong>
+      <small id="headerStatus">Личные сообщения</small>
     </div>
 
-    <div class="contact">
-      <div class="avatar">👤</div>
-      <div class="name">АТАМ</div>
-    </div>
-
-    <div class="contact">
-      <div class="avatar">👤</div>
-      <div class="name">ЭМЕЛИ</div>
-    </div>
-
+    <button class="icon-button" id="headerMenu"
+      aria-label="Меню">⋮</button>
   </div>
 
-</section>
+  <section class="view active" id="chatsView">
+    <div class="section-title">Сообщения</div>
+    <div class="contact-list" id="contactList"></div>
+  </section>
 
-
-<!-- КОНТАКТЫ -->
-<section id="contactsPage" class="page">
-
-  <div class="contacts">
-
-    <div class="contact">
-      <div class="avatar">👤</div>
-      <div class="name">АТАМ</div>
+  <section class="view" id="contactsView">
+    <div class="section-title">Контакты</div>
+    <div class="contact-list" id="allContacts"></div>
+    <div style="padding:12px">
+      <button class="primary-button" id="addContactButton">
+        ➕ Добавить контакт
+      </button>
     </div>
+  </section>
 
-    <div class="contact">
-      <div class="avatar">👤</div>
-      <div class="name">АТАМ</div>
-    </div>
+  <section class="view" id="chatView">
+    <div class="header">
+      <button class="icon-button" id="backButton"
+        aria-label="Назад">‹</button>
 
-    <div class="contact">
-      <div class="avatar">👤</div>
-      <div class="name">ЭМЕЛИ</div>
-    </div>
+      <div class="avatar" id="chatAvatar">👤</div>
 
-  </div>
-
-</section>
-
-
-<!-- СТАТУС -->
-<section id="status" class="page">
-
-  <div class="status-box">
-    ➕
-    <br><br>
-    Добавить статус
-  </div>
-
-</section>
-
-
-<!-- ФОТО -->
-<section id="photos" class="page">
-
-  <div class="photo-box">
-    🖼️
-    <br><br>
-    Фотоальбом
-  </div>
-
-</section>
-
-
-<!-- ИГРА -->
-<section id="game" class="page">
-
-  <div class="game-box">
-    🎮
-    <br><br>
-    Онлайн игры
-  </div>
-
-</section>
-
-
-<!-- ПРОФИЛЬ -->
-<section id="profile" class="page">
-
-  <div class="profile-page">
-
-    <div class="profile-photo" id="profilePhoto">
-      👤
-    </div>
-
-    <div
-      class="profile-name"
-      id="profileName"
-    >
-      Мой профиль
-    </div>
-
-    <button
-      class="edit-profile-btn"
-      onclick="openEditProfile()"
-    >
-      ✏️ Редактировать профиль
-    </button>
-
-  </div>
-
-</section>
-
-
-<!-- РЕДАКТИРОВАНИЕ -->
-<section id="editProfile" class="page">
-
-  <div class="edit-box">
-
-    <div class="edit-photo">
-      👤
-    </div>
-
-    <input
-      type="text"
-      id="nameInput"
-      placeholder="Введите имя"
-    >
-
-    <input
-      type="file"
-      accept="image/*"
-      id="photoInput"
-    >
-
-    <button
-      class="save-btn"
-      onclick="saveProfile()"
-    >
-      Сохранить
-    </button>
-
-  </div>
-
-</section>
-
-
-<!-- НИЖНЕЕ МЕНЮ -->
-<nav class="bottom-nav">
-
-  <button
-    class="nav-btn active"
-    onclick="showPage('chat', this)"
-  >
-    <span class="nav-icon">💬</span>
-  </button>
-
-
-  <button
-    class="nav-btn"
-    onclick="showPage('contactsPage', this)"
-  >
-    <span class="nav-icon">👥</span>
-  </button>
-
-
-  <button
-    class="nav-btn"
-    onclick="showPage('status', this)"
-  >
-    <span class="nav-icon">➕</span>
-  </button>
-
-
-  <button
-    class="nav-btn"
-    onclick="showPage('photos', this)"
-  >
-    <span class="nav-icon">🖼️</span>
-  </button>
-
-
-  <button
-    class="nav-btn"
-    onclick="showPage('game', this)"
-  >
-    <span class="nav-icon">🎮</span>
-  </button>
-
-</nav>
-
-
-<script>
-
-/* ПЕРЕКЛЮЧЕНИЕ */
-
-function showPage(pageId, button) {
-
-  document
-    .querySelectorAll(".page")
-    .forEach(function(page) {
-      page.classList.remove("active");
-    });
-
-  document
-    .getElementById(pageId)
-    .classList.add("active");
-
-  document
-    .querySelectorAll(".nav-btn")
-    .forEach(function(btn) {
-      btn.classList.remove("active");
-    });
-
-  if (button) {
-    button.classList.add("active");
-  }
-}
-
-
-/* ПРОФИЛЬ */
-
-function openProfile() {
-
-  document
-    .querySelectorAll(".page")
-    .forEach(function(page) {
-      page.classList.remove("active");
-    });
-
-  document
-    .getElementById("profile")
-    .classList.add("active");
-}
-
-
-/* РЕДАКТИРОВАНИЕ */
-
-function openEditProfile() {
-
-  document
-    .querySelectorAll(".page")
-    .forEach(function(page) {
-      page.classList.remove("active");
-    });
-
-  document
-    .getElementById("editProfile")
-    .classList.add("active");
-}
-
-
-/* СОХРАНЕНИЕ ПРОФИЛЯ */
-
-function saveProfile() {
-
-  let name =
-    document
-      .getElementById("nameInput")
-      .value;
-
-  if (name.trim() !== "") {
-
-    document
-      .getElementById("profileName")
-      .textContent = name;
-
-  }
-
-  openProfile();
-}
-
-
-/* ПОИСК */
-
-function searchContacts() {
-
-  let input =
-    document.querySelector(".search input");
-
-  let text =
-    input.value.toLowerCase();
-
-  document
-    .querySelectorAll("#contacts .contact")
-    .forEach(function(contact) {
-
-      let name =
-        contact
-          .querySelector(".name")
-          .textContent
-          .toLowerCase();
-
-      if (name.includes(text)) {
-        contact.style.display = "flex";
-      } else {
-        contact.style.display = "none";
-      }
-
-    });
-}
-
-</script>
-// Открытие переписки с контактом
-document.querySelectorAll("#contacts .contact").forEach(function(contact) {
-
-  contact.addEventListener("click", function() {
-
-    let name = contact.querySelector(".name").textContent;
-
-    let chat = document.createElement("div");
-
-    chat.id = "chatWindow";
-
-    chat.innerHTML = `
-      <div class="chat-header">
-        <button onclick="document.getElementById('chatWindow').remove()">‹</button>
-        <div class="chat-avatar">👤</div>
-        <strong>${name}</strong>
+      <div class="header-info">
+        <strong id="chatName">Контакт</strong>
+        <small>Личная переписка</small>
       </div>
 
-      <div class="chat-messages">
-        <div class="empty-chat">
-          Начните общение с ${name}
-        </div>
+      <button class="icon-button" id="chatMenu"
+        aria-label="Меню">⋮</button>
+    </div>
+
+    <div class="messages" id="messageList"></div>
+
+    <form class="composer" id="messageForm">
+      <input id="messageInput"
+        type="text"
+        placeholder="Напишите сообщение..."
+        autocomplete="off"
+        maxlength="2000">
+
+      <button class="send-button"
+        type="submit"
+        aria-label="Отправить">➤</button>
+    </form>
+  </section>
+
+  <section class="view" id="profileView">
+    <div class="section-title">Профиль</div>
+
+    <div class="profile-content">
+      <div class="avatar profile-photo" id="profileAvatar">👤</div>
+
+      <button class="secondary-button"
+        id="choosePhotoButton"
+        style="display:block;margin:auto">
+        🖼️ Выбрать фотографию
+      </button>
+
+      <input type="file" id="photoInput" accept="image/*">
+
+      <div class="field">
+        <label for="profileName">Имя</label>
+        <input id="profileName"
+          type="text"
+          maxlength="40"
+          placeholder="Введите имя">
       </div>
 
-      <div class="chat-input">
-        <input id="messageInput" placeholder="Напишите сообщение...">
-        <button onclick="sendMessage()">➤</button>
-      </div>
-    `;
+      <button class="primary-button" id="saveProfileButton">
+        Сохранить профиль
+      </button>
+    </div>
+  </section>
 
-    document.body.appendChild(chat);
-  });
+  <section class="view" id="moreView">
+    <div class="section-title">Дополнительно</div>
+    <div class="profile-content">
+      <button class="primary-button" id="moreAddContact">
+        ➕ Добавить контакт
+      </button>
 
-});
+      <button class="primary-button" id="moreProfile">
+        👤 Мой профиль
+      </button>
 
-function sendMessage() {
+      <p class="empty">
+        Добро пожаловать в наш чат! ❤️
+      </p>
+    </div>
+  </section>
 
-  let input = document.getElementById("messageInput");
+  <nav class="bottom-nav">
+    <button class="nav-button active"
+      data-view="chatsView"
+      aria-label="Сообщения">💬</button>
 
-  if (!input || input.value.trim() === "") return;
+    <button class="nav-button"
+      data-view="contactsView"
+      aria-label="Контакты">👥</button>
 
-  let messages = document.querySelector(".chat-messages");
+    <button class="nav-button"
+      id="bottomAddContact"
+      aria-label="Добавить контакт">➕</button>
 
-  let message = document.createElement("div");
+    <button class="nav-button"
+      data-view="profileView"
+      aria-label="Профиль">🖼️</button>
 
-  message.className = "my-message";
-  message.textContent = input.value;
-
-  messages.appendChild(message);
-
-  input.value = "";
-}
-</body>
-</html>
+   
