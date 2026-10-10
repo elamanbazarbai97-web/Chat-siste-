@@ -55,6 +55,12 @@ button{cursor:pointer;border:none}
 .ro{flex:1;min-width:0;padding:13px;border:1px solid #ddd;border-radius:10px;background:#fff;overflow-wrap:anywhere}
 .ro.ph{color:#999}
 #cpView{position:relative}
+.app > .header{cursor:pointer}
+.app > .header .avatar{width:64px;height:64px}
+.nav-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.nav-button small{font-size:11px;color:#555}
+.cside{display:flex;flex-direction:column;align-items:center;gap:2px}
+.dots{font-size:22px;padding:2px 10px;color:#555}
 .mrow{display:flex;align-items:flex-end;gap:6px}
 .mrow.mine{justify-content:flex-end}
 .mrow .avatar{width:32px;height:32px;font-size:16px}
@@ -166,21 +172,35 @@ body{padding:15px}
     </div>
   </section>
 
-  <section class="view" id="moreView">
-    <div class="section-title">Дополнительно</div>
+  <section class="view" id="statusView">
+    <div class="section-title">Временный статус</div>
     <div class="profile-content">
-      <button class="primary-button" id="moreAddContact">➕ Добавить контакт</button>
-      <button class="primary-button" id="moreProfile">👤 Мой профиль</button>
-      <p class="empty">Добро пожаловать в наш чат! ❤️</p>
+      <div class="row"><input id="stText" maxlength="100" placeholder="Мой статус на 24 часа"><button class="secondary-button" id="stPost">Опубликовать</button></div>
+      <div id="stList"></div>
+    </div>
+  </section>
+
+  <section class="view" id="albumView">
+    <div class="section-title">Альбом</div>
+    <div class="profile-content">
+      <button class="primary-button" id="albumAdd">📷 Добавить фото</button>
+      <div class="grid" id="albumGrid" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <section class="view" id="moreView">
+    <div class="section-title">Онлайн игры</div>
+    <div class="profile-content">
+      <p class="empty">Онлайн-игры скоро появятся. Напиши, во что хочешь играть! 🎮</p>
     </div>
   </section>
 
   <nav class="bottom-nav">
-    <button class="nav-button active" data-view="chatsView" aria-label="Сообщения">💬</button>
-    <button class="nav-button" data-view="contactsView" aria-label="Контакты">👥</button>
-    <button class="nav-button" id="bottomAddContact" aria-label="Добавить контакт">➕</button>
-    <button class="nav-button" data-view="profileView" aria-label="Профиль">🖼️</button>
-    <button class="nav-button" data-view="moreView" aria-label="Дополнительно">🎮</button>
+    <button class="nav-button active" data-view="chatsView" aria-label="Чат">✉️<small>Чат</small></button>
+    <button class="nav-button" data-view="contactsView" aria-label="Контакты">👥<small>Контакты</small></button>
+    <button class="nav-button" data-view="statusView" aria-label="Статус">➕<small>Статус</small></button>
+    <button class="nav-button" data-view="albumView" aria-label="Альбом">📷<small>Альбом</small></button>
+    <button class="nav-button" data-view="moreView" aria-label="Игры">🎮<small>Игры</small></button>
   </nav>
 
   <div class="modal" id="loginModal">
@@ -348,6 +368,7 @@ function makeAvatar(photo, name) {
 
 function updateHeader() {
   $("headerName").textContent = showName(state.profile.name, state.profile.phone);
+  $("headerStatus").textContent = state.profile.phone ? "+" + state.profile.phone : "";
   const avatar = makeAvatar(state.profile.photo, state.profile.name);
   avatar.id = "headerAvatar";
   $("headerAvatar").replaceWith(avatar);
@@ -374,17 +395,13 @@ function showView(viewId) {
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === viewId));
   document.querySelectorAll(".nav-button[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === viewId));
 
-  const status = {
-    chatsView: "Личные сообщения",
-    contactsView: "Ваши контакты",
-    profileView: "Настройки профиля",
-    moreView: "Меню"
-  };
-  if (status[viewId]) $("headerStatus").textContent = status[viewId];
+  $("headerStatus").textContent = state.profile.phone ? "+" + state.profile.phone : "";
 
   if (viewId === "chatsView") renderChats();
   if (viewId === "contactsView") renderContacts();
   if (viewId === "profileView") updateHeader();
+  if (viewId === "statusView") loadStatuses();
+  if (viewId === "albumView") loadAlbum();
 }
 
 function openContact(contactId) {
@@ -419,6 +436,27 @@ function makeContactButton(contact, showLastMessage) {
     : "Открыть переписку";
   info.append(name, last);
   button.appendChild(info);
+  if (showLastMessage) {
+    const side = document.createElement("div");
+    side.className = "cside";
+    if (messages.length && messages[messages.length - 1].mine) {
+      const tk = document.createElement("small");
+      tk.className = "tick";
+      tk.textContent = "✓";
+      side.appendChild(tk);
+    }
+    const dots = document.createElement("span");
+    dots.className = "dots";
+    dots.textContent = "⋮";
+    dots.addEventListener("click", e => {
+      e.stopPropagation();
+      state.activeContact = contact.id;
+      $("menuDelete").style.display = "block";
+      $("menuModal").classList.add("show");
+    });
+    side.appendChild(dots);
+    button.appendChild(side);
+  }
   button.addEventListener("click", () => openContact(contact.id));
   return button;
 }
@@ -606,8 +644,6 @@ $("backButton").addEventListener("click", function () {
 });
 
 $("addContactButton").addEventListener("click", openAddContact);
-$("bottomAddContact").addEventListener("click", openAddContact);
-$("moreAddContact").addEventListener("click", openAddContact);
 $("cancelContact").addEventListener("click", () => $("contactModal").classList.remove("show"));
 $("saveContact").addEventListener("click", addContact);
 $("newContactName").addEventListener("keydown", e => { if (e.key === "Enter") addContact(); });
@@ -622,7 +658,10 @@ $("chatMenu").addEventListener("click", function () {
   $("menuModal").classList.add("show");
 });
 
-$("closeMenu").addEventListener("click", () => $("menuModal").classList.remove("show"));
+$("closeMenu").addEventListener("click", () => {
+  $("menuModal").classList.remove("show");
+  if (currentView !== "chatView" && currentView !== "cpView") state.activeContact = null;
+});
 $("menuDelete").addEventListener("click", deleteCurrentContact);
 
 function openProfile() {
@@ -630,7 +669,6 @@ function openProfile() {
   showView("profileView");
 }
 $("menuProfile").addEventListener("click", openProfile);
-$("moreProfile").addEventListener("click", openProfile);
 
 document.querySelectorAll(".nav-button[data-view]").forEach(button => {
   button.addEventListener("click", function () {
@@ -748,7 +786,12 @@ async function cpTab(t) {
       boxes.forEach(x => r.appendChild(x));
       box.appendChild(r);
     };
-    if (t === "status") { row("➕", mk(v.status, "Статуса пока нет")); return; }
+    if (t === "status") {
+      const st = (await get(ref(db, "statuses/" + id))).val();
+      const live = st && st.text && Date.now() - (st.ts || 0) < 864e5;
+      row("➕", mk(live ? st.text : v.status, "Статуса пока нет"));
+      return;
+    }
     const bp = (v.birth || "").split("-");
     row("📞", mk("+" + id, ""));
     row("🎂", mk(+bp[0] || "", "Год"), mk(+bp[2] || "", "День"), mk(MN[+bp[1] - 1] || "", "Месяц"));
@@ -777,9 +820,83 @@ $("albumInput").addEventListener("change", function () {
   if (!db) { alert("Нет подключения."); return; }
   compress(f, 800, url => {
     push(ref(db, "albums/" + state.profile.phone), { d: url, ts: serverTimestamp() })
-      .then(() => alert("Фото добавлено в альбом."))
+      .then(() => { alert("Фото добавлено в альбом."); if (currentView === "albumView") loadAlbum(); })
       .catch(() => alert("Не удалось добавить фото."));
   });
+});
+
+async function loadStatuses() {
+  const list = $("stList");
+  list.replaceChildren();
+  if (!db || !state.profile.phone) return;
+  const ids = [state.profile.phone, ...state.contacts.map(c => c.id)];
+  const res = await Promise.all(ids.map(id => get(ref(db, "statuses/" + id)).then(sn => [id, sn.val()]).catch(() => [id, null])));
+  let n = 0;
+  res.forEach(([id, v]) => {
+    if (!v || !v.text || Date.now() - (v.ts || 0) > 864e5) return;
+    n++;
+    const c = state.contacts.find(x => x.id === id);
+    const d = document.createElement("div");
+    d.className = "ro";
+    d.style.margin = "8px 0";
+    const b = document.createElement("b");
+    b.textContent = (id === state.profile.phone ? "Я" : (c ? c.name : "+" + id)) + " · " + fmtTime(v.ts);
+    const t = document.createElement("div");
+    t.textContent = v.text;
+    d.append(b, t);
+    list.appendChild(d);
+  });
+  if (!n) {
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = "Пока нет статусов.";
+    list.appendChild(e);
+  }
+}
+
+$("stPost").addEventListener("click", async () => {
+  if (!db) { alert("Нет подключения."); return; }
+  const text = $("stText").value.trim();
+  const r = ref(db, "statuses/" + state.profile.phone);
+  try {
+    if (text) await set(r, { text: text, ts: serverTimestamp() }); else await remove(r);
+    $("stText").value = "";
+    loadStatuses();
+  } catch (e) {
+    alert("Не удалось опубликовать.");
+  }
+});
+
+async function loadAlbum() {
+  const g = $("albumGrid");
+  g.replaceChildren();
+  if (!db || !state.profile.phone) return;
+  try {
+    const sn = await get(query(ref(db, "albums/" + state.profile.phone), limitToLast(60)));
+    sn.forEach(ch => {
+      const im = document.createElement("img");
+      im.src = ch.val().d;
+      im.alt = "";
+      g.appendChild(im);
+    });
+    if (!g.children.length) {
+      const d = document.createElement("div");
+      d.className = "empty";
+      d.style.gridColumn = "1 / -1";
+      d.textContent = "Пока нет фото.";
+      g.appendChild(d);
+    }
+  } catch (e) {
+    g.textContent = "Не удалось загрузить.";
+  }
+}
+
+$("albumAdd").addEventListener("click", () => $("albumInput").click());
+
+document.querySelector(".app > .header").addEventListener("click", e => {
+  if (e.target.closest("#headerMenu")) return;
+  state.activeContact = null;
+  showView("profileView");
 });
 
 // ---------- Запуск ----------
