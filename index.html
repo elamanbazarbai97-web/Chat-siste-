@@ -51,6 +51,10 @@ button{cursor:pointer;border:none}
 .row i{font-style:normal;font-size:24px;width:34px;text-align:center;flex-shrink:0}
 .row input,.row select{flex:1;min-width:0;padding:13px;border:1px solid #ddd;border-radius:10px;background:#fff}
 #profilePhone{background:#f4f4f4;color:#555}
+#profileView .section-title{display:none}
+.ro{flex:1;min-width:0;padding:13px;border:1px solid #ddd;border-radius:10px;background:#fff;overflow-wrap:anywhere}
+.ro.ph{color:#999}
+#cpView{position:relative}
 #cpView .profile-content{flex:1;min-height:0}
 .cp-tabs{display:flex;justify-content:space-around;margin:16px 0;padding-bottom:10px;border-bottom:1px solid #ddd}
 .cp-tabs button{background:#fff;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;border-radius:10px}
@@ -114,11 +118,7 @@ body{padding:15px}
   </section>
 
   <section class="view" id="cpView">
-    <div class="header">
-      <button class="icon-button" id="cpBack" aria-label="Назад">←</button>
-      <div class="header-info"></div>
-      <button class="icon-button" id="cpMenu" aria-label="Меню">⋮</button>
-    </div>
+    <button class="icon-button" id="cpBack" aria-label="Назад" style="position:absolute;top:8px;left:8px;z-index:2;background:#ffffffcc">←</button>
     <div class="profile-content" style="text-align:center">
       <div class="avatar profile-photo" id="cpAvatar">👤</div>
       <h2 id="cpName" style="margin:0"></h2>
@@ -352,7 +352,7 @@ function updateHeader() {
 function showView(viewId) {
   if (viewId === "chatView" && !state.activeContact) viewId = "chatsView";
   currentView = viewId;
-  document.querySelector(".app > .header").style.display = viewId === "cpView" ? "none" : "";
+  document.querySelector(".app > .header").style.display = (viewId === "cpView" || viewId === "profileView") ? "none" : "";
   document.querySelector(".bottom-nav").style.display = viewId === "cpView" ? "none" : "";
 
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === viewId));
@@ -616,6 +616,8 @@ document.querySelectorAll(".nav-button[data-view]").forEach(button => {
 let cpId = null;
 const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 
+const MN = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
 function fmtBirth(b) {
   if (!b) return "";
   const [y, m, d] = b.split("-");
@@ -693,20 +695,31 @@ async function cpTab(t) {
     const v = (await get(ref(db, "users/" + id))).val() || {};
     if (cpId !== id) return;
     box.replaceChildren();
-    const rows = t === "status"
-      ? [["Статус", v.status || "Статуса пока нет"]]
-      : [["Телефон", "+" + id], ["Дата рождения", fmtBirth(v.birth)], ["Город", v.city], ["Село", v.village], ["Образование", v.edu], ["Работа", v.work], ["Хобби", v.hobby], ["Пол", v.gender], ["Семейное положение", v.family]];
-    rows.forEach(([k, val]) => {
-      if (!val) return;
+    const mk = (txt, ph) => {
       const d = document.createElement("div");
-      d.className = "field";
-      const l = document.createElement("label");
-      l.textContent = k;
-      const x = document.createElement("div");
-      x.textContent = val;
-      d.append(l, x);
-      box.appendChild(d);
-    });
+      d.className = "ro" + (txt ? "" : " ph");
+      d.textContent = txt || ph;
+      return d;
+    };
+    const row = (icon, ...boxes) => {
+      const r = document.createElement("div");
+      r.className = "row";
+      const i = document.createElement("i");
+      i.textContent = icon;
+      r.appendChild(i);
+      boxes.forEach(x => r.appendChild(x));
+      box.appendChild(r);
+    };
+    if (t === "status") { row("➕", mk(v.status, "Статуса пока нет")); return; }
+    const bp = (v.birth || "").split("-");
+    row("📞", mk("+" + id, ""));
+    row("🎂", mk(+bp[0] || "", "Год"), mk(+bp[2] || "", "День"), mk(MN[+bp[1] - 1] || "", "Месяц"));
+    row("🏙️", mk(v.city, "Город"), mk(v.village, "Село"));
+    row("🎓", mk(v.edu, "Образование"));
+    row("💼", mk(v.work, "Работа"));
+    row("🎯", mk(v.hobby, "Хобби"));
+    row("👤", mk(v.gender, "Пол"));
+    row("💍", mk(v.family, "Семейное положение"));
   } catch (e) {
     box.replaceChildren();
     say("Не удалось загрузить.");
@@ -714,10 +727,6 @@ async function cpTab(t) {
 }
 
 $("cpBack").addEventListener("click", () => showView("chatView"));
-$("cpMenu").addEventListener("click", () => {
-  $("menuDelete").style.display = "block";
-  $("menuModal").classList.add("show");
-});
 document.querySelectorAll(".cp-tabs button").forEach(b => b.addEventListener("click", () => cpTab(b.dataset.t)));
 $("chatName").parentElement.style.cursor = "pointer";
 $("chatName").parentElement.addEventListener("click", () => { if (state.activeContact) openCP(state.activeContact); });
