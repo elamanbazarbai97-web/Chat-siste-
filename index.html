@@ -351,6 +351,7 @@ function updateHeader() {
 function showView(viewId) {
   if (viewId === "chatView" && !state.activeContact) viewId = "chatsView";
   currentView = viewId;
+  document.querySelector(".app > .header").style.display = viewId === "cpView" ? "none" : "";
 
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === viewId));
   document.querySelectorAll(".nav-button[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === viewId));
@@ -651,6 +652,7 @@ function openCP(id) {
     if (v && v.photo && cpId === id) setAv(v.photo);
   }).catch(() => {});
   showView("cpView");
+  document.querySelector("#cpView .profile-content").scrollTop = 0;
   cpTab("bio");
 }
 
