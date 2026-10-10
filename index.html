@@ -55,6 +55,17 @@ button{cursor:pointer;border:none}
 .ro{flex:1;min-width:0;padding:13px;border:1px solid #ddd;border-radius:10px;background:#fff;overflow-wrap:anywhere}
 .ro.ph{color:#999}
 #cpView{position:relative}
+.mrow{display:flex;align-items:flex-end;gap:6px}
+.mrow.mine{justify-content:flex-end}
+.mrow .avatar{width:32px;height:32px;font-size:16px}
+.mrow .message{align-self:auto;max-width:100%}
+.mcol{display:flex;flex-direction:column;align-items:flex-end;max-width:72%}
+.mt{font-size:11px;color:#888;white-space:nowrap}
+.tick{color:#4a90e2;font-size:12px;margin-top:2px}
+#chatView .header-info small{display:inline;margin:0 0 0 10px}
+.composer{position:relative;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.composer input{padding-right:58px}
+.send-button{position:absolute;right:18px;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 4px);width:40px;height:40px;font-size:20px}
 #cpView .profile-content{flex:1;min-height:0}
 .cp-tabs{display:flex;justify-content:space-around;margin:16px 0;padding-bottom:10px;border-bottom:1px solid #ddd}
 .cp-tabs button{background:#fff;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;border-radius:10px}
@@ -102,18 +113,18 @@ body{padding:15px}
 
   <section class="view" id="chatView">
     <div class="header">
-      <button class="icon-button" id="backButton" aria-label="Назад">‹</button>
+      <button class="icon-button" id="backButton" aria-label="Назад">←</button>
       <div class="avatar" id="chatAvatar">👤</div>
       <div class="header-info">
         <strong id="chatName">Контакт</strong>
-        <small>Личная переписка</small>
+        <small id="chatStatus"></small>
       </div>
       <button class="icon-button" id="chatMenu" aria-label="Меню">⋮</button>
     </div>
     <div class="messages" id="messageList"></div>
     <form class="composer" id="messageForm">
-      <input id="messageInput" type="text" placeholder="Напишите сообщение..." autocomplete="off" maxlength="2000">
-      <button class="send-button" type="submit" aria-label="Отправить">➤</button>
+      <input id="messageInput" type="text" placeholder="Начать SMS" autocomplete="off" maxlength="2000">
+      <button class="send-button" type="submit" aria-label="Отправить">↑</button>
     </form>
   </section>
 
@@ -204,7 +215,7 @@ body{padding:15px}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, set, get, remove, onChildAdded, query, limitToLast, serverTimestamp }
+import { getDatabase, ref, push, set, get, remove, onChildAdded, onValue, onDisconnect, query, limitToLast, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ===== 1. ВСТАВЬТЕ СЮДА КОНФИГ ИЗ FIREBASE =====
@@ -229,6 +240,7 @@ const UID_KEY = "my_chat_uid";
 let state = { profile: { name: "", photo: "", phone: "", birth: "", city: "", village: "", edu: "", work: "", hobby: "", gender: "", family: "", status: "" }, contacts: [], messages: {}, activeContact: null };
 let currentView = "chatsView";
 const listening = {};
+const presence = {};
 
 // ---------- Firebase ----------
 let db = null;
@@ -263,6 +275,10 @@ function refreshAfterMessage(id) {
 function listenChat(contact) {
   if (!db || listening[contact.id]) return;
   listening[contact.id] = true;
+  onValue(ref(db, "presence/" + contact.id), sn => {
+    presence[contact.id] = sn.val();
+    if (currentView === "chatView" && state.activeContact === contact.id) updateChatStatus();
+  });
   const q = query(ref(db, "chats/" + chatIdWith(contact.id) + "/messages"), limitToLast(200));
   onChildAdded(q, snap => {
     const m = snap.val();
@@ -352,8 +368,8 @@ function updateHeader() {
 function showView(viewId) {
   if (viewId === "chatView" && !state.activeContact) viewId = "chatsView";
   currentView = viewId;
-  document.querySelector(".app > .header").style.display = (viewId === "cpView" || viewId === "profileView") ? "none" : "";
-  document.querySelector(".bottom-nav").style.display = viewId === "cpView" ? "none" : "";
+  document.querySelector(".app > .header").style.display = (viewId === "cpView" || viewId === "profileView" || viewId === "chatView") ? "none" : "";
+  document.querySelector(".bottom-nav").style.display = (viewId === "cpView" || viewId === "chatView") ? "none" : "";
 
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === viewId));
   document.querySelectorAll(".nav-button[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === viewId));
@@ -382,6 +398,7 @@ function openContact(contactId) {
   avatar.addEventListener("click", () => openCP(contactId));
   $("chatAvatar").replaceWith(avatar);
   $("headerStatus").textContent = "Переписка с контактом";
+  updateChatStatus();
   showView("chatView");
   renderMessages();
 }
@@ -440,16 +457,32 @@ function renderMessages() {
     return;
   }
 
+  const contact = state.contacts.find(c => c.id === state.activeContact);
   messages.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "mrow" + (item.mine ? " mine" : "");
+    const col = document.createElement("div");
+    col.className = "mcol";
     const message = document.createElement("div");
     message.className = "message" + (item.mine ? " mine" : "");
-    const text = document.createElement("div");
-    text.textContent = item.text;
+    message.textContent = item.text;
+    col.appendChild(message);
+    if (item.mine) {
+      const tick = document.createElement("small");
+      tick.className = "tick";
+      tick.textContent = "✓";
+      col.appendChild(tick);
+    }
     const time = document.createElement("span");
-    time.className = "message-time";
+    time.className = "mt";
     time.textContent = item.time || "";
-    message.append(text, time);
-    list.appendChild(message);
+    if (item.mine) {
+      row.append(time, col);
+    } else {
+      if (contact) row.appendChild(makeAvatar(contact.photo, contact.name));
+      row.append(col, time);
+    }
+    list.appendChild(row);
   });
   list.scrollTop = list.scrollHeight;
 }
@@ -612,6 +645,11 @@ document.querySelectorAll(".nav-button[data-view]").forEach(button => {
   });
 });
 
+function updateChatStatus() {
+  const pr = presence[state.activeContact];
+  $("chatStatus").textContent = pr ? (pr.on ? "онлайн" : "был(а) в " + fmtTime(pr.ts)) : "";
+}
+
 // ---------- Страница контакта ----------
 let cpId = null;
 const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
@@ -766,6 +804,11 @@ function startOnline() {
   }).then(() => {
     listenInbox();
     state.contacts.forEach(listenChat);
+    onValue(ref(db, ".info/connected"), sn => {
+      if (sn.val() !== true) return;
+      const pr = ref(db, "presence/" + state.profile.phone);
+      onDisconnect(pr).set({ on: false, ts: serverTimestamp() }).then(() => set(pr, { on: true, ts: serverTimestamp() }));
+    });
   }).catch(() => alert("Нет связи с Firebase. Проверьте правила базы."));
 }
 
