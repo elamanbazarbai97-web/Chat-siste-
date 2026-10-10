@@ -55,6 +55,7 @@ button{cursor:pointer;border:none}
 .ro{flex:1;min-width:0;padding:13px;border:1px solid #ddd;border-radius:10px;background:#fff;overflow-wrap:anywhere}
 .ro.ph{color:#999}
 #cpView{position:relative}
+.cbtn{width:64px;height:64px;border-radius:50%;color:#fff;font-size:28px}
 .app > .header{cursor:pointer}
 .app > .header .avatar{width:64px;height:64px}
 .nav-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
@@ -125,6 +126,8 @@ body{padding:15px}
         <strong id="chatName">Контакт</strong>
         <small id="chatStatus"></small>
       </div>
+      <button class="icon-button" id="callAudio" aria-label="Аудиозвонок">📞</button>
+      <button class="icon-button" id="callVideo" aria-label="Видеозвонок">🎥</button>
       <button class="icon-button" id="chatMenu" aria-label="Меню">⋮</button>
     </div>
     <div class="messages" id="messageList"></div>
@@ -202,6 +205,18 @@ body{padding:15px}
     <button class="nav-button" data-view="albumView" aria-label="Альбом">📷<small>Альбом</small></button>
     <button class="nav-button" data-view="moreView" aria-label="Игры">🎮<small>Игры</small></button>
   </nav>
+
+  <div class="modal" id="callModal" style="background:#000;padding:0;align-items:stretch">
+    <div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;color:#fff">
+      <video id="remoteVideo" autoplay playsinline style="flex:1;width:100%;min-height:0;object-fit:cover;background:#111"></video>
+      <video id="localVideo" autoplay playsinline muted style="position:absolute;right:12px;top:12px;width:100px;border-radius:10px;background:#333"></video>
+      <div id="callInfo" style="position:absolute;top:0;left:0;right:0;padding:20px;text-align:center;font-size:20px"></div>
+      <div style="display:flex;justify-content:center;gap:28px;padding:18px;padding-bottom:max(18px,env(safe-area-inset-bottom));background:#000">
+        <button class="cbtn" id="callAccept" style="background:#2a9d4a">📞</button>
+        <button class="cbtn" id="callEnd" style="background:#d33">✖</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal" id="loginModal">
     <div class="modal-card" style="text-align:center">
@@ -899,6 +914,137 @@ document.querySelector(".app > .header").addEventListener("click", e => {
   showView("profileView");
 });
 
+// ---------- Звонки (WebRTC, сигналы через Firebase) ----------
+let pc = null, localStream = null, callPeer = null, callRole = null, incomingCall = null, callUnsubs = [], pendingIce = [], callTimer = null;
+const ICE = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+function showCall(text, ringing, video) {
+  $("callInfo").textContent = text;
+  $("callAccept").style.display = ringing ? "inline-block" : "none";
+  $("localVideo").style.display = video ? "block" : "none";
+  $("callModal").classList.add("show");
+}
+
+function addIce(c) {
+  if (pc && pc.remoteDescription) pc.addIceCandidate(c).catch(() => {});
+  else pendingIce.push(c);
+}
+
+function flushIce() {
+  pendingIce.forEach(c => pc.addIceCandidate(c).catch(() => {}));
+  pendingIce = [];
+}
+
+function newPC(calleeId) {
+  const c = new RTCPeerConnection(ICE);
+  c.onicecandidate = e => {
+    if (e.candidate) push(ref(db, "calls/" + calleeId + (callRole === "caller" ? "/icec" : "/icee")), e.candidate.toJSON());
+  };
+  c.ontrack = e => { $("remoteVideo").srcObject = e.streams[0]; };
+  c.onconnectionstatechange = () => {
+    if (c.connectionState === "connected") $("callInfo").textContent = "Разговор идёт";
+    if (c.connectionState === "failed") { alert("Не удалось соединиться."); endCall(true); }
+  };
+  return c;
+}
+
+function endCall(removeRemote) {
+  clearTimeout(callTimer);
+  callUnsubs.forEach(f => { try { f(); } catch (e) {} });
+  callUnsubs = [];
+  if (pc) { pc.onconnectionstatechange = null; pc.close(); pc = null; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  $("remoteVideo").srcObject = null;
+  $("localVideo").srcObject = null;
+  $("callModal").classList.remove("show");
+  if (removeRemote && db && callRole) remove(ref(db, "calls/" + (callRole === "caller" ? callPeer : myKey()))).catch(() => {});
+  callRole = null; callPeer = null; incomingCall = null; pendingIce = [];
+}
+
+async function startCall(video) {
+  if (!db) { alert("Нет подключения."); return; }
+  const peer = state.activeContact;
+  if (!peer || callRole) return;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !!video });
+  } catch (e) {
+    alert("Нет доступа к микрофону или камере.");
+    return;
+  }
+  callRole = "caller";
+  callPeer = peer;
+  const c = state.contacts.find(x => x.id === peer);
+  showCall((video ? "Видеозвонок: " : "Звонок: ") + (c ? c.name : "+" + peer), false, video);
+  $("localVideo").srcObject = localStream;
+  try {
+    pc = newPC(peer);
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    const cref = ref(db, "calls/" + peer);
+    await set(cref, { from: myKey(), name: state.profile.name || "+" + myKey(), video: !!video, offer: { type: offer.type, sdp: offer.sdp }, ts: serverTimestamp() });
+    callUnsubs.push(onValue(cref, sn => {
+      const v = sn.val();
+      if (!v) { endCall(false); return; }
+      if (v.answer && pc && !pc.remoteDescription) pc.setRemoteDescription(v.answer).then(flushIce).catch(() => {});
+    }));
+    callUnsubs.push(onChildAdded(ref(db, "calls/" + peer + "/icee"), sn => addIce(sn.val())));
+    callTimer = setTimeout(() => {
+      if (pc && pc.connectionState !== "connected") { alert("Не отвечает."); endCall(true); }
+    }, 45000);
+  } catch (e) {
+    alert("Не удалось начать звонок.");
+    endCall(true);
+  }
+}
+
+async function acceptCall() {
+  const v = incomingCall;
+  if (!v) return;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !!v.video });
+  } catch (e) {
+    alert("Нет доступа к микрофону или камере.");
+    endCall(true);
+    return;
+  }
+  const me = myKey();
+  $("callAccept").style.display = "none";
+  $("callInfo").textContent = "Соединение...";
+  $("localVideo").style.display = v.video ? "block" : "none";
+  $("localVideo").srcObject = localStream;
+  try {
+    pc = newPC(me);
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    await pc.setRemoteDescription(v.offer);
+    const ans = await pc.createAnswer();
+    await pc.setLocalDescription(ans);
+    await set(ref(db, "calls/" + me + "/answer"), { type: ans.type, sdp: ans.sdp });
+    callUnsubs.push(onChildAdded(ref(db, "calls/" + me + "/icec"), sn => addIce(sn.val())));
+  } catch (e) {
+    alert("Не удалось принять звонок.");
+    endCall(true);
+  }
+}
+
+function listenCalls() {
+  onValue(ref(db, "calls/" + myKey()), sn => {
+    const v = sn.val();
+    if (!v) { if (callRole === "callee") endCall(false); return; }
+    if (callRole || !v.offer || v.answer) return;
+    if (v.ts && Date.now() - v.ts > 60000) return;
+    incomingCall = v;
+    callRole = "callee";
+    callPeer = v.from;
+    showCall((v.name || "+" + v.from) + (v.video ? " — видеозвонок" : " — звонок"), true, false);
+  });
+}
+
+$("callAudio").addEventListener("click", () => startCall(false));
+$("callVideo").addEventListener("click", () => startCall(true));
+$("callAccept").addEventListener("click", acceptCall);
+$("callEnd").addEventListener("click", () => endCall(true));
+
 // ---------- Запуск ----------
 loadState();
 updateHeader();
@@ -920,6 +1066,7 @@ function startOnline() {
     return saveRemote();
   }).then(() => {
     listenInbox();
+    listenCalls();
     state.contacts.forEach(listenChat);
     onValue(ref(db, ".info/connected"), sn => {
       if (sn.val() !== true) return;
