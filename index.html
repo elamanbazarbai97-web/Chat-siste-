@@ -51,6 +51,12 @@ button{cursor:pointer;border:none}
 .row i{font-style:normal;font-size:24px;width:34px;text-align:center;flex-shrink:0}
 .row input,.row select{flex:1;min-width:0;padding:13px;border:1px solid #ddd;border-radius:10px;background:#fff}
 #profilePhone{background:#f4f4f4;color:#555}
+.cp-tabs{display:flex;justify-content:space-around;margin:16px 0;padding-bottom:10px;border-bottom:1px solid #ddd}
+.cp-tabs button{background:#fff;font-size:26px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;border-radius:10px}
+.cp-tabs button small{font-size:11px;color:#555}
+.cp-tabs button.on{background:#ededed}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
 .modal{position:absolute;inset:0;background:#0007;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
 .modal.show{display:flex}
 .modal-card{width:100%;max-width:380px;padding:22px;background:#fff;border-radius:18px}
@@ -106,6 +112,26 @@ body{padding:15px}
     </form>
   </section>
 
+  <section class="view" id="cpView">
+    <div class="header">
+      <button class="icon-button" id="cpBack" aria-label="Назад">←</button>
+      <div class="header-info"></div>
+      <button class="icon-button" id="cpMenu" aria-label="Меню">⋮</button>
+    </div>
+    <div class="profile-content" style="text-align:center">
+      <div class="avatar profile-photo" id="cpAvatar">👤</div>
+      <h2 id="cpName" style="margin:0"></h2>
+      <div class="cp-tabs">
+        <button data-t="bio">🪪<small>Профиль</small></button>
+        <button data-t="status">➕<small>Статус</small></button>
+        <button data-t="photo">📷<small>Фото</small></button>
+        <button data-t="video">🎬<small>Видео</small></button>
+        <button data-t="sms">✉️<small>SMS</small></button>
+      </div>
+      <div id="cpContent" style="text-align:left"></div>
+    </div>
+  </section>
+
   <section class="view" id="profileView">
     <div class="section-title">Профиль</div>
     <div class="profile-content">
@@ -121,6 +147,9 @@ body{padding:15px}
       <div class="row"><i>🎯</i><input id="pHobby" maxlength="60" placeholder="Хобби"></div>
       <div class="row"><i>👤</i><select id="pGender"><option value="">Пол</option><option>Мужской</option><option>Женский</option></select></div>
       <div class="row"><i>💍</i><input id="pFamily" maxlength="40" placeholder="Семейное положение"></div>
+      <div class="row"><i>➕</i><input id="pStatus" maxlength="100" placeholder="Статус"></div>
+      <button class="secondary-button" id="addAlbumPhoto" style="display:block;margin:6px auto">📷 Добавить фото в альбом</button>
+      <input type="file" id="albumInput" accept="image/*" style="display:none">
       <button class="primary-button" id="saveProfileButton">Сохранить профиль</button>
     </div>
   </section>
@@ -196,7 +225,7 @@ const $ = id => document.getElementById(id);
 const STORAGE_KEY = "my_chat_app_v2";
 const UID_KEY = "my_chat_uid";
 
-let state = { profile: { name: "", photo: "", phone: "", birth: "", city: "", village: "", edu: "", work: "", hobby: "", gender: "", family: "" }, contacts: [], messages: {}, activeContact: null };
+let state = { profile: { name: "", photo: "", phone: "", birth: "", city: "", village: "", edu: "", work: "", hobby: "", gender: "", family: "", status: "" }, contacts: [], messages: {}, activeContact: null };
 let currentView = "chatsView";
 const listening = {};
 
@@ -222,7 +251,7 @@ const fmtTime = ts => new Date(ts || Date.now()).toLocaleTimeString("ru-RU", { h
 
 function saveRemote() {
   const p = state.profile;
-  return set(ref(db, "users/" + p.phone), { uid: myUid, name: p.name || "", phone: p.phone, birth: p.birth, city: p.city, village: p.village, edu: p.edu, work: p.work, hobby: p.hobby, gender: p.gender, family: p.family });
+  return set(ref(db, "users/" + p.phone), { uid: myUid, name: p.name || "", phone: p.phone, birth: p.birth, city: p.city, village: p.village, edu: p.edu, work: p.work, hobby: p.hobby, gender: p.gender, family: p.family, status: p.status, photo: p.photo });
 }
 
 function refreshAfterMessage(id) {
@@ -307,7 +336,7 @@ function updateHeader() {
   $("headerAvatar").replaceWith(avatar);
 
   $("profileName").value = state.profile.name;
-  [["pCity","city"],["pVillage","village"],["pEdu","edu"],["pWork","work"],["pHobby","hobby"],["pGender","gender"],["pFamily","family"]].forEach(([i, k]) => { $(i).value = state.profile[k] || ""; });
+  [["pCity","city"],["pVillage","village"],["pEdu","edu"],["pWork","work"],["pHobby","hobby"],["pGender","gender"],["pFamily","family"],["pStatus","status"]].forEach(([i, k]) => { $(i).value = state.profile[k] || ""; });
   const bp = (state.profile.birth || "").split("-");
   $("pBY").value = +bp[0] || "";
   $("pBM").value = +bp[1] || "";
@@ -346,6 +375,8 @@ function openContact(contactId) {
   $("chatName").textContent = contact.name;
   const avatar = makeAvatar(contact.photo, contact.name);
   avatar.id = "chatAvatar";
+  avatar.style.cursor = "pointer";
+  avatar.addEventListener("click", () => openCP(contactId));
   $("chatAvatar").replaceWith(avatar);
   $("headerStatus").textContent = "Переписка с контактом";
   showView("chatView");
@@ -500,13 +531,12 @@ $("photoInput").addEventListener("change", function () {
   if (!file.type.startsWith("image/")) { alert("Выбери файл фотографии."); this.value = ""; return; }
   if (file.size > 2 * 1024 * 1024) { alert("Выбери фото размером до 2 МБ."); this.value = ""; return; }
 
-  const reader = new FileReader();
-  reader.onload = function () {
-    state.profile.photo = reader.result;
+  compress(file, 256, url => {
+    state.profile.photo = url;
     saveState();
     updateHeader();
-  };
-  reader.readAsDataURL(file);
+    if (db && state.profile.phone) saveRemote().catch(() => {});
+  });
   this.value = "";
 });
 
@@ -524,6 +554,7 @@ $("saveProfileButton").addEventListener("click", async function () {
   p.hobby = $("pHobby").value.trim();
   p.gender = $("pGender").value;
   p.family = $("pFamily").value.trim();
+  p.status = $("pStatus").value.trim();
   saveState();
   try { if (db) await saveRemote(); } catch (e) { alert("Не удалось сохранить на сервере."); return; }
   updateHeader();
@@ -578,6 +609,128 @@ document.querySelectorAll(".nav-button[data-view]").forEach(button => {
   });
 });
 
+// ---------- Страница контакта ----------
+let cpId = null;
+const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+function fmtBirth(b) {
+  if (!b) return "";
+  const [y, m, d] = b.split("-");
+  return [+d || "", MONTHS[+m - 1] || "", +y || ""].filter(Boolean).join(" ");
+}
+
+function compress(file, max, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const r = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * r);
+    c.height = Math.round(img.height * r);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(img.src);
+    cb(c.toDataURL("image/jpeg", 0.7));
+  };
+  img.onerror = () => alert("Не удалось открыть фото.");
+  img.src = URL.createObjectURL(file);
+}
+
+function openCP(id) {
+  const c = state.contacts.find(x => x.id === id);
+  if (!c) return;
+  cpId = id;
+  $("cpName").textContent = c.name;
+  const setAv = photo => {
+    const av = makeAvatar(photo, c.name);
+    av.id = "cpAvatar";
+    av.classList.add("profile-photo");
+    $("cpAvatar").replaceWith(av);
+  };
+  setAv(c.photo);
+  if (db) get(ref(db, "users/" + id)).then(sn => {
+    const v = sn.val();
+    if (v && v.photo && cpId === id) setAv(v.photo);
+  }).catch(() => {});
+  showView("cpView");
+  cpTab("bio");
+}
+
+async function cpTab(t) {
+  document.querySelectorAll(".cp-tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  const box = $("cpContent");
+  box.replaceChildren();
+  const say = txt => {
+    const d = document.createElement("div");
+    d.className = "empty";
+    d.textContent = txt;
+    box.appendChild(d);
+  };
+  if (t === "sms") { openContact(cpId); return; }
+  if (t === "video") { say("Видео-альбом пока недоступен: для хранения видео нужен платный тариф Firebase."); return; }
+  if (!db) { say("Нет подключения."); return; }
+  say("Загрузка...");
+  const id = cpId;
+  try {
+    if (t === "photo") {
+      const sn = await get(query(ref(db, "albums/" + id), limitToLast(60)));
+      if (cpId !== id) return;
+      box.replaceChildren();
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      sn.forEach(ch => {
+        const im = document.createElement("img");
+        im.src = ch.val().d;
+        im.alt = "";
+        grid.appendChild(im);
+      });
+      if (!grid.children.length) { say("Пока нет фото."); return; }
+      box.appendChild(grid);
+      return;
+    }
+    const v = (await get(ref(db, "users/" + id))).val() || {};
+    if (cpId !== id) return;
+    box.replaceChildren();
+    const rows = t === "status"
+      ? [["Статус", v.status || "Статуса пока нет"]]
+      : [["Телефон", "+" + id], ["Дата рождения", fmtBirth(v.birth)], ["Город", v.city], ["Село", v.village], ["Образование", v.edu], ["Работа", v.work], ["Хобби", v.hobby], ["Пол", v.gender], ["Семейное положение", v.family]];
+    rows.forEach(([k, val]) => {
+      if (!val) return;
+      const d = document.createElement("div");
+      d.className = "field";
+      const l = document.createElement("label");
+      l.textContent = k;
+      const x = document.createElement("div");
+      x.textContent = val;
+      d.append(l, x);
+      box.appendChild(d);
+    });
+  } catch (e) {
+    box.replaceChildren();
+    say("Не удалось загрузить.");
+  }
+}
+
+$("cpBack").addEventListener("click", () => showView("chatView"));
+$("cpMenu").addEventListener("click", () => {
+  $("menuDelete").style.display = "block";
+  $("menuModal").classList.add("show");
+});
+document.querySelectorAll(".cp-tabs button").forEach(b => b.addEventListener("click", () => cpTab(b.dataset.t)));
+$("chatName").parentElement.style.cursor = "pointer";
+$("chatName").parentElement.addEventListener("click", () => { if (state.activeContact) openCP(state.activeContact); });
+
+$("addAlbumPhoto").addEventListener("click", () => $("albumInput").click());
+$("albumInput").addEventListener("change", function () {
+  const f = this.files && this.files[0];
+  this.value = "";
+  if (!f || !f.type.startsWith("image/")) return;
+  if (!db) { alert("Нет подключения."); return; }
+  compress(f, 800, url => {
+    push(ref(db, "albums/" + state.profile.phone), { d: url, ts: serverTimestamp() })
+      .then(() => alert("Фото добавлено в альбом."))
+      .catch(() => alert("Не удалось добавить фото."));
+  });
+});
+
 // ---------- Запуск ----------
 loadState();
 updateHeader();
@@ -592,7 +745,7 @@ function startOnline() {
   get(ref(db, "users/" + state.profile.phone)).then(snap => {
     const v = snap.val();
     if (v) {
-      ["name", "birth", "city", "village", "edu", "work", "hobby", "gender", "family"].forEach(k => { if (!state.profile[k] && v[k]) state.profile[k] = v[k]; });
+      ["name", "birth", "city", "village", "edu", "work", "hobby", "gender", "family", "status", "photo"].forEach(k => { if (!state.profile[k] && v[k]) state.profile[k] = v[k]; });
       saveState();
       updateHeader();
     }
